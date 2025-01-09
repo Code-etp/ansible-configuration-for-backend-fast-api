@@ -1,0 +1,64 @@
+name: Deploy Dev-branch
+
+on:
+  push:
+    branches: [dev]
+
+jobs:
+  deploy:
+    runs-on: ${{ vars.TASK_RUNNER }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+  
+      - name: Set environment variables
+        run: |
+          echo "SSH_USER=${{ secrets.REMOTE_SERVER_USER }}" >> $GITHUB_ENV
+          echo "SERVER_IP=${{ secrets.REMOTE_SERVER_IP }}" >> $GITHUB_ENV
+          echo "ACCESS_TOKEN=${{ secrets.ACCESS_TOKEN }}" >> $GITHUB_ENV
+          echo "SUDO_PASSWORD=${{ secrets.REMOTE_SUDO_PASSWORD }}" >> $GITHUB_ENV
+          echo "ANSIBLE_HOST_KEY_CHECKING=false" >> $GITHUB_ENV
+
+      - name: Set Inline Inventory
+        run: |
+          mkdir -p ansible_config
+          if [ -z "${SERVER_IP}" ] || [ -z "${SSH_USER}" ] || [ -z "${SUDO_PASSWORD}" ]; then
+            echo "One or more required environment variables are not set."
+            exit 1
+          fi
+          cat <<EOF > ansible_config/inventory.yml
+          all:
+            hosts:
+              ${SERVER_IP}:
+                ansible_user: ${SSH_USER}
+                ansible_become: true
+                ansible_become_method: sudo
+                ansible_become_pass: ${SUDO_PASSWORD}
+          EOF
+
+      - name: Install Ansible
+        run: |
+          python3 -m venv venv
+          if [[ ${{ runner.os }} == 'Windows' ]]; then 
+            venv\Scripts\activate
+          else
+            source venv/bin/activate
+          fi
+          pip install ansible
+        
+      - name: Set ssh agent configuration
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.REMOTE_SSH_PRIVATE_KEY }}
+
+      - name: Run Ansible Playbook
+        run: |
+          ansible-playbook -i ansible_config/inventory.yml ansible_config/playbook.yaml
