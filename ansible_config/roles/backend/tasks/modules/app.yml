@@ -1,0 +1,33 @@
+---
+- name: Ensure the repository is updated or cloned
+  git:
+    repo: "{{ app_repo }}"
+    dest: "{{ app_dir }}"
+    version: "{{ git_branch }}"
+    force: yes
+    update: yes
+
+- name: Copy .env-example to .env with specific permissions
+  copy:
+    src: "{{ app_dir }}/.env-example"
+    dest: "{{ app_dir }}/.env"
+    remote_src: yes
+    mode: '0644'
+
+- name: Ensure Environment variables are set
+  ansible.builtin.lineinfile:
+    path: "{{ app_dir }}/.env"
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+    create: yes
+  loop:
+    - { key: "POSTGRES_DB", value: "{{ db_name }}" }
+    - { key: "USERS_OPEN_REGISTRATION", value: True }
+    - { key: "SENTRY_DSN", value: "{{ sentry_dsn }}" }
+    - { key: "POSTGRES_USER", value: "{{ postgres_user }}" }
+    - { key: "POSTGRES_SERVER", value: "{{ postgres_server }}" }
+    - { key: "POSTGRES_PASSWORD", value: "{{ postgres_password }}" }
+    - {
+        key: BACKEND_CORS_ORIGINS,
+        value: "'[\"http://localhost:3000\",\"https://localhost:3000\",\"{{ felms_app_url }}\"]'"
+      }

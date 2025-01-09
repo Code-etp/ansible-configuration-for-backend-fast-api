@@ -1,0 +1,16 @@
+- name: Create virtual environment
+  command: python3 -m venv venv
+  args:
+    chdir: "{{ app_dir }}"
+    creates: "{{ app_dir }}/venv"
+
+- name: Upgrade pip and Install poetry
+  shell: |
+    source venv/bin/activate
+    pip3 install --upgrade pip
+    pip3 install poetry
+    poetry install 
+  args:
+    chdir: "{{ app_dir }}"
+    executable: /bin/bash
+  changed_when: false 

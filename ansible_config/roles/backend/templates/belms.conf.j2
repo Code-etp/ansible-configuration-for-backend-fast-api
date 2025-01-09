@@ -1,0 +1,8 @@
+[program:{{ app_name }}]
+command={{ project_root }}/gunicorn_start.sh
+user={{ app_user }}
+autostart=true
+autorestart=true
+redirect_stderr=true
+stderr_logfile={{ project_root }}/logs/supervisor.err.log
+stdout_logfile={{ project_root }}/logs/supervisor.out.log

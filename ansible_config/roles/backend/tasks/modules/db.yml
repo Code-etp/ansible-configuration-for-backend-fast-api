@@ -1,0 +1,33 @@
+---
+- name: Check if database exists
+  postgresql_query:
+    db: postgres
+    login_user: postgres
+    query: "SELECT 1 FROM pg_database WHERE datname = '{{ db_name }}'"
+  changed_when: false
+  become_user: "{{ postgres_user }}"
+  register: database_exists
+
+- name: Create database if it doesn't exist
+  postgresql_db:
+    name: "{{ db_name }}"
+    state: present
+    login_user: "{{ postgres_user }}"
+  when: database_exists.rowcount == 0
+
+- name: Initialize database
+  shell: |
+    source venv/bin/activate
+    python -m app.initial_data
+  args:
+    chdir: "{{ app_dir }}"
+    executable: /bin/bash
+  when: database_exists.rowcount == 0
+
+- name: Update database
+  shell: |
+    source venv/bin/activate
+    python -m app.update_data
+  args:
+    chdir: "{{ app_dir }}"
+    executable: /bin/bash

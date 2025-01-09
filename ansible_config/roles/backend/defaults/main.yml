@@ -1,0 +1,58 @@
+app_dir: "{{ project_root }}/html"
+app_name: "devbe.lms.kodehauz.dev"
+app_repo: 'https://{{ lookup("env", "ACCESS_TOKEN") }}@github.com/kodehauzinternship/be-lms.git'
+venv_dir: "venv"
+app_port: 8000
+nginx_port: 80
+app_user: "www-data"
+app_group: 'www-data'
+git_branch: "dev"
+sentry_dsn: "https://1234567890.ingest.us.sentry.io/1234567890"
+project_root: /var/www/{{ app_name }}
+felms_app_url: https://dev.lms.kodehauz.dev
+supervisor_conf_filename: belms.conf
+required_packages: 
+  - git
+  - acl
+  - wget
+  - curl
+  - llvm
+  - nginx
+  - gnupg2
+  - tk-dev
+  - certbot
+  - python3
+  - xz-utils
+  - gunicorn
+  - libpq-dev
+  - supervisor
+  - postgresql
+  - libssl-dev
+  - zlib1g-dev
+  - libbz2-dev
+  - libffi-dev
+  - python3-dev
+  - python3-pip
+  - liblzma-dev
+  - python3-venv
+  - libsqlite3-dev
+  - libreadline-dev
+  - libncurses5-dev
+  - python3-openssl
+  - build-essential
+  - python3-psycopg2
+  - libncursesw5-dev
+  - postgresql-contrib
+  - python3-certbot-nginx
+
+db_name: app
+postgres_user: postgres
+postgres_server: localhost
+postgres_password: postgres
+postgresql_version: 14
+postgresql_data_dir: /var/lib/postgresql/{{ postgresql_version }}/main
+
+venv_path: "{{ app_dir }}/{{ venv_dir }}"
+
+pyenv_root: "/root/.pyenv"
+python_version: "3.10.15"

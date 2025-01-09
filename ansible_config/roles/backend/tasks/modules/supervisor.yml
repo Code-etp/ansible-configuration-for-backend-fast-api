@@ -1,0 +1,46 @@
+- name: Create logs directory
+  file:
+    path: "{{ project_root }}/logs"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: '0755'
+    recurse: yes
+
+- name: Create log files
+  file:
+    path: "{{ item }}"
+    state: touch
+    owner: "{{ app_user }}"
+    group: "{{ app_group }}"
+    mode: '0644'
+  with_items:
+    - "{{ project_root }}/logs/nginx-access.log"
+    - "{{ project_root }}/logs/nginx-error.log"
+    - "{{ project_root }}/logs/supervisor.err.log"
+    - "{{ project_root }}/logs/supervisor.out.log"
+
+- name: supervisor and gunicorn configuration
+  block:
+    - name: Copy Gunicorn start script
+      template:
+        src: "gunicorn_start.sh.j2"
+        dest: "{{ project_root }}/gunicorn_start.sh"
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: "0755"
+
+    - name: Copy the belms supervisor file
+      template:
+        src: "belms.conf.j2"
+        dest: "/etc/supervisor/conf.d/{{ supervisor_conf_filename }}"
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: "0644"
+      notify: restart supervisor
+  
+    - name: Ensure supervisor is running
+      service:
+        name: supervisor
+        state: restarted
+        enabled: yes

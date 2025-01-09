@@ -1,0 +1,6 @@
+---
+- name: Deploy FastAPI Backend App
+  hosts: all
+  become: yes
+  roles:
+    - backend

@@ -1,0 +1,37 @@
+   
+- name: Setup nginx configuration
+  block:
+    - name: Check Nginx service status
+      systemd:
+        name: nginx
+        state: started
+      register: nginx_status
+
+    - name: Check if NGINX configuration file exists
+      stat:
+        path: "/etc/nginx/sites-available/{{ app_name }}"
+      register: nginx_config_status
+
+    - name: Configure Nginx
+      template:
+        src: "{{ app_name }}.j2"
+        dest: "/etc/nginx/sites-available/{{ app_name }}"
+        owner: "{{ app_user }}"
+        group: "{{ app_group }}"
+        mode: "0644"
+      register: configure_nginx
+      notify: Restart Nginx
+      when: not nginx_config_status.stat.exists
+
+    - name: Create symbolic link to sites-enabled
+      file:
+        src: "/etc/nginx/sites-available/{{ app_name }}"
+        dest: "/etc/nginx/sites-enabled/{{ app_name }}"
+        state: link
+       
+
+    - name: Reload Nginx configuration
+      systemd:
+        name: nginx
+        state: reloaded
+

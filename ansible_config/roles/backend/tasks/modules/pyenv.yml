@@ -1,0 +1,54 @@
+- name: Clone pyenv repository
+  git:
+    repo: "https://github.com/pyenv/pyenv.git"
+    dest: "{{ pyenv_root }}"
+    update: no
+  register: pyenv_clone
+  changed_when: pyenv_clone.changed
+
+- name: Update shell profile for pyenv
+  lineinfile:
+    path: /root/.bashrc
+    line: |
+      export PYENV_ROOT="{{ pyenv_root }}"
+      export PATH="$PYENV_ROOT/bin:$PATH"
+      eval "$(pyenv init --path)"
+      eval "$(pyenv init -)"
+    state: present
+
+- name: Reload shell only if required
+  shell: |
+    export PYENV_ROOT="{{ pyenv_root }}"
+    export PATH="$PYENV_ROOT/bin:$PATH"
+    eval "$(pyenv init --path)"
+    eval "$(pyenv init -)"
+  args:
+    executable: /bin/bash
+  when: pyenv_root not in ansible_env.PATH
+
+- name: Check if Python version {{ python_version }} is already installed
+  stat:
+    path: "{{ pyenv_root }}/versions/{{ python_version }}"
+  register: python_version_dir
+
+- name: Install Python version {{ python_version }}
+  shell: |
+    export PYENV_ROOT="{{ pyenv_root }}"
+    export PATH="$PYENV_ROOT/bin:$PATH"
+    eval "$(pyenv init --path)"
+    eval "$(pyenv init -)"
+    pyenv install {{ python_version }}
+  args:
+    executable: /bin/bash
+  when: not python_version_dir.stat.exists
+
+- name: Set Python version locally for FastAPI project
+  shell: |
+    export PYENV_ROOT="{{ pyenv_root }}"
+    export PATH="$PYENV_ROOT/bin:$PATH"
+    eval "$(pyenv init --path)"
+    eval "$(pyenv init -)"
+    cd {{ app_dir }}
+    pyenv local {{ python_version }}
+  args:
+    executable: /bin/bash

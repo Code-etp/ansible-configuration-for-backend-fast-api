@@ -1,0 +1,49 @@
+- name: Configure Certbot SSL Management
+  block:
+    - name: Check if SSL certificate already exists
+      stat:
+        path: "/etc/letsencrypt/live/{{ app_name }}/fullchain.pem"
+      register: ssl_cert_status
+
+    - name: Check Certificate Expiration
+      command: "certbot certificates -d {{ app_name }}"
+      register: cert_check
+      changed_when: false
+
+    - name: Obtain New SSL Certificate
+      command: >
+        certbot certonly --nginx -d {{ app_name }} 
+        --non-interactive 
+        --agree-tos 
+        --cert-name {{ app_name }}
+        --verbose
+      when: not ssl_cert_status.stat.exists
+      register: certbot_result
+      notify: Restart Nginx
+      failed_when: 
+        - certbot_result.rc != 0
+        - "'too many certificates' not in certbot_result.stderr"
+  
+    - name: Attempt SSL Certificate Renewal
+      command: "certbot renew --cert-name {{ app_name }}"
+      when: 
+        - ssl_cert_status.stat.exists
+        - "'30 days' in cert_check.stdout"
+      failed_when: 
+        - certbot_result.rc != 0
+        - "'too many certificates' not in certbot_result.stderr"
+      notify: Restart Nginx
+
+    - name: Verify Certbot configuration
+      command: "certbot certificates -d {{ app_name }}"
+      changed_when: false
+      failed_when: false
+
+  rescue:
+    - name: Handle Certbot failures
+      debug:
+        msg: "Failed to manage Certbot SSL configuration. Check Certbot logs for details."
+      when: 
+        - certbot_result is defined
+        - certbot_result.rc is defined 
+        - certbot_result.rc != 0

@@ -1,0 +1,21 @@
+---
+
+- name: restart postgresql
+  service:
+    name: postgresql
+    state: restarted
+
+- name: restart supervisor
+  service:
+    name: supervisor
+    state: restarted
+
+- name: check gunicorn status
+  debug:
+    msg: "Gunicorn started successfully with return code {{ gunicorn_result.rc }}"
+  failed_when: gunicorn_result.rc != 0
+
+- name: Restart Nginx
+  systemd:
+    name: nginx
+    state: restarted

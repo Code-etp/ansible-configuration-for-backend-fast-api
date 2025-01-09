@@ -1,0 +1,40 @@
+---
+
+- import_tasks: modules/setup.yml
+  tags: 
+    - setup
+    - packages
+
+- import_tasks: modules/app.yml
+  tags:
+    - deploy
+
+- import_tasks: modules/pyenv.yml
+  tags: 
+    - setup
+    - deploy
+
+- import_tasks: modules/venv.yml
+  tags: 
+    - setup
+
+- import_tasks: modules/db.yml
+  tags: 
+    - setup
+    - database
+
+- import_tasks: modules/supervisor.yml
+  tags:
+    - deploy
+    - service
+
+- import_tasks: modules/nginx.yml
+  tags:
+    - nginx
+    - config
+
+- import_tasks: modules/certbot.yml
+  tags:
+    - certbot
+    - config
+
